@@ -10,3 +10,6 @@
 hello <- function() {
   print("Hello, world!")
 }
+
+
+# Add a test line!
