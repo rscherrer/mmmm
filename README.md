@@ -2,3 +2,7 @@
 
 
 
+
+| Branch | Travis CI |
+| ------------- | ------------- |
+| `master` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=master)](https://travis-ci.org/rscherrer/mmmm) |
