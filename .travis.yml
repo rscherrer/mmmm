@@ -13,4 +13,4 @@ r_github_packages:
 after_success:
   - Rscript -e 'lintr::lint_package()'
   - Rscript -e 'library(covr); codecov()'
-- Rscript -e 'library(goodpractice); gp()'
+  - Rscript -e 'library(goodpractice); gp()'
