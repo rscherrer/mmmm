@@ -223,7 +223,8 @@ t <- t + 1
 
 #### Speciation related functions ####
 
-check_split <- function(species_id, population, sex_dimensions) {
+# Function to check if speciation has happened for a given species
+check_split <- function(species_id, population, sex_dimensions, speciation_delta) {
   
   # Subset the focal species
   population <- population[population$species == species_id,]
@@ -238,6 +239,6 @@ check_split <- function(species_id, population, sex_dimensions) {
   fit1 <- mod1$betweenss / mod1$totss
   fit2 <- mod2$betweenss / mod2$totss
   
-  fit1 - fit2
+  fit2 - fit1 > speciation_delta
   
 }
