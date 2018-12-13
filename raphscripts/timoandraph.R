@@ -177,7 +177,13 @@ get_carrying_capacity <- function(individual_id, population, resource_peaks, res
 
 #### Simulation ####
 
-population
+# Initialize the population with a function
+population <- initialize_population()
+
+# Initialize the resource mapping function over ecological and geographical space
+# Possibly by reading an input file
+
+# Check boundary conditions in reproduction, putain
 
 # Calculate distance matrices
 eco_distance_matrix <- make_distance_matrix(population, eco_dimensions)
@@ -217,11 +223,74 @@ survivors <- population[survivors_id,]
 # Plug together offspring and survivors
 population <- rbind(survivors, offspring)
 
+# Update the population matrix based on speciation
+population <- update_speciation(population)
+
+# Update the phylogeny
+register <- update_register(register, population)
+
+# Is it time to takea selfie?
+is_selfietime <- t %% selfietime == 0
+
+# Take a selfie
+if(is_selfietime) {
+  take_selfie(population, t)
+}
+
 # Advance time
 t <- t + 1
 
+# Function to take a snapshot of the population
+take_selfie <- function(population, t) {
+  
+  outfile <- paste0("selfie_", t, ".csv")
+  
+  # Write the population matrix to CSV
+  write.csv(population, outfile)
+  
+}
+
+#### Post processing ####
+
+#phylogeny <- phylogenize(register) # Newick
 
 #### Speciation related functions ####
+
+# Update the phylogeny
+update_register <- function(register, population) {
+  
+  # Record all species and append them to the register
+  allspecies <- levels(population$species)
+  register <- append(register, allspecies)
+  return(register)
+  
+}
+
+# Update the population with new species if speciation has happened
+update_speciation <- function(population) {
+  
+  # What are all the species?
+  allspecies <- levels(population$species)
+  
+  # For each species...
+  for(i in seq_len(length(allspecies))) {
+    
+    curr.species <- allspecies[i]
+    
+    # Check whether the current species has speciated
+    species_ids <- check_split(curr.species, population, sex_dimensions, speciation_delta)
+    
+    # If there is speciation
+    if(species_ids != FALSE) {
+      
+      # Replace the species ids with the new ids
+      population$species[population$species == curr.species,] <- species_ids
+      
+    }
+    
+  }
+  
+}
 
 # Function to check if speciation has happened for a given species
 check_split <- function(species_id, population, sex_dimensions, speciation_delta) {
@@ -239,6 +308,13 @@ check_split <- function(species_id, population, sex_dimensions, speciation_delta
   fit1 <- mod1$betweenss / mod1$totss
   fit2 <- mod2$betweenss / mod2$totss
   
-  fit2 - fit1 > speciation_delta
+  is_speciation <- fit2 - fit1 > speciation_delta
   
+  # Return the species ID of all individuals
+  if(is_speciation) {
+    return(as.numeric(paste0(species_id, mod2$cluster)))
+  } else {
+    return(FALSE)
+  }
+ 
 }
