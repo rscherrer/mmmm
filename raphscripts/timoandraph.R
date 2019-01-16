@@ -1,5 +1,7 @@
 # Initialization
 
+library(truncnorm)
+
 # Events
 # An individual is a list
 
@@ -173,7 +175,22 @@ get_carrying_capacity <- function(individual_id, population, resource_peaks, res
   
 }
 
-
+# Function to initialize the population data frame
+initialize_population <- function(necol, nspatial, nmating, nindiv, bounds = c(0,10), sd = 1) {
+  
+  # Center on the midpoint between the boundaries
+  midpoint <- mean(bounds)
+  
+  # Sample initial values for all individuals and all dimensions
+  dimensions <- seq_len(necol + nspatial + nmating)
+  population <- lapply(dimensions, function(dim) {
+    rtruncnorm(n = nindiv, a = bounds[1], b = bounds[2], mean = midpoint, sd = sd)
+  })
+  population <- do.call("cbind", population)
+  
+  return(population)
+  
+}
 
 #### Simulation ####
 
@@ -185,60 +202,67 @@ population <- initialize_population()
 
 # Check boundary conditions in reproduction, putain
 
-# Calculate distance matrices
-eco_distance_matrix <- make_distance_matrix(population, eco_dimensions)
-geo_distance_matrix <- make_distance_matrix(population, geo_dimensions)
-
-# Mating -- create a population of offspring
-# For each individual...
-offspring <- lapply(1:nrow(population), function(individual_id) {
+# Simulation loop
+while(t <= tmax) {
   
-  # Find a mate
-  mate_id <- find_mate(individual_id)
+  # Calculate distance matrices
+  eco_distance_matrix <- make_distance_matrix(population, eco_dimensions)
+  geo_distance_matrix <- make_distance_matrix(population, geo_dimensions)
   
-  # Is mating successful? 
-  is_mating <- mating_success(individual_id, mate_id)
+  # Mating -- create a population of offspring
+  # For each individual...
+  offspring <- lapply(1:nrow(population), function(individual_id) {
+    
+    # Find a mate
+    mate_id <- find_mate(individual_id)
+    
+    # Is mating successful? 
+    is_mating <- mating_success(individual_id, mate_id)
+    
+    # If yes, produce offspring
+    if(is_mating) offpspring <- produce_offspring(individual_id, mate_id)
+    
+    return(offspring)
+    
+  })
   
-  # If yes, produce offspring
-  if(is_mating) offpspring <- produce_offspring(individual_id, mate_id)
+  # Create a population of survivors
+  # For each individual...
+  survivors_id <- lapply(1:nrow(population), function(individual_id) {
+    
+    # Does the focal individual survive?
+    does_survive <- survive(individual_id)
+    
+    return(does_survive)
+    
+  })
   
-  return(offspring)
+  # Extract the survivors from the old population
+  survivors <- population[survivors_id,]
   
-})
-
-# Create a population of survivors
-# For each individual...
-survivors_id <- lapply(1:nrow(population), function(individual_id) {
+  # Plug together offspring and survivors
+  population <- rbind(survivors, offspring)
   
-  # Does the focal individual survive?
-  does_survive <- survive(individual_id)
+  # Update the population matrix based on speciation
+  population <- update_speciation(population)
   
-  return(does_survive)
+  # Update the phylogeny
+  register <- update_register(register, population)
   
-})
-
-# Extract the survivors from the old population
-survivors <- population[survivors_id,]
-
-# Plug together offspring and survivors
-population <- rbind(survivors, offspring)
-
-# Update the population matrix based on speciation
-population <- update_speciation(population)
-
-# Update the phylogeny
-register <- update_register(register, population)
-
-# Is it time to takea selfie?
-is_selfietime <- t %% selfietime == 0
-
-# Take a selfie
-if(is_selfietime) {
-  take_selfie(population, t)
+  # Is it time to takea selfie?
+  is_selfietime <- t %% selfietime == 0
+  
+  # Take a selfie
+  if(is_selfietime) {
+    take_selfie(population, t)
+  }
+  
+  # Advance time
+  t <- t + 1
+  
 }
 
-# Advance time
-t <- t + 1
+
 
 # Function to take a snapshot of the population
 take_selfie <- function(population, t) {
