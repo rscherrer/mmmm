@@ -1,4 +1,11 @@
-# Distance matrix
+# 
+#' Distance matrix
+#'
+#' @param population stub
+#' @param dimensions stuv
+#'
+#' @return A distance matrix.
+#' @export
 make_distance_matrix <- function(population, dimensions) {
   
   population <- population[,dimensions]
@@ -8,7 +15,17 @@ make_distance_matrix <- function(population, dimensions) {
   
 }
 
-# Mate finding
+#' Mate finding
+#'
+#' @param individual_id stub
+#' @param maxmatedistance stub
+#' @param geo_distance_matrix stub
+#' @param mateslope stub
+#' @param mateintercept stub
+#' @param population stub
+#'
+#' @return Numeric indicating mate id.
+#' @export
 find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mateslope, mateintercept, population) {
   
   speciescol <- ncol(population)
@@ -27,7 +44,7 @@ find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mates
   distance_vec <- distance_vec[!distance_vec > maxmatedistance]
   
   # If there are potential mates left
-  if(length(distance_vec) > 0) {
+  if (length(distance_vec) > 0) {
     
     # Probability depends on geographical distance (turn this into probability)
     sampling_probs <- mateslope * distance_vec + mateintercept
@@ -44,10 +61,18 @@ find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mates
     return(NULL)
     
   }
- 
+  
 }
 
-# Does mating happens?
+#' Check mating success
+#'
+#' @param mom_id 
+#' @param dad_id 
+#' @param sexslope 
+#' @param sexintercept 
+#'
+#' @return a numeric? int? probability? of mating happening
+#' @export
 mating_success <- function(mom_id, dad_id, sexslope, sexintercept) {
   
   mom_sex_traits <- t(population[mom_id, sex_dimensions])
@@ -58,8 +83,8 @@ mating_success <- function(mom_id, dad_id, sexslope, sexintercept) {
   
   # Mating probability (turn this into a probability)
   mating_prob <- sexslope * sex_distance + sexintercept
-  if(mating_prob > 1) mating_prob <- 1
-  if(mating_prob < 0) mating_prob <- 0
+  if (mating_prob > 1) mating_prob <- 1
+  if (mating_prob < 0) mating_prob <- 0
   
   # Sample mating event
   is_mating <- rbinom(1, 1, mating_prob)
@@ -68,7 +93,23 @@ mating_success <- function(mom_id, dad_id, sexslope, sexintercept) {
   
 }
 
-# Function to produce offspring
+#' Produce offspring
+#'
+#' @param mom_id stub
+#' @param dad_id stub
+#' @param dispersal_distance stub
+#' @param eco_dimensions stub
+#' @param sex_dimensions stub
+#' @param geo_dimensions stub
+#' @param mutation_rate_eco stub
+#' @param mutation_rate_sex stub
+#' @param mutational_effect_eco stub
+#' @param mutational_effect_sex stub
+#' @param bounds stuv
+#' @param individual_species stub
+#'
+#' @return Vector of stub.
+#' @export
 produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions, sex_dimensions, geo_dimensions, mutation_rate_eco, mutation_rate_sex, mutational_effect_eco, mutational_effect_sex, bounds, individual_species) {
   
   # Extract parental trait values
@@ -81,7 +122,7 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   off_eco_traits <- (mom_eco_traits + dad_eco_traits) / 2
   off_sex_traits <- (mom_sex_traits + dad_sex_traits) / 2
   
-  ##if(any(is.na(c(off_eco_traits, off_eco_traits)))) stop("Here!")
+  ##if (any(is.na(c(off_eco_traits, off_eco_traits)))) stop("Here!")
   
   # Sample mutation events
   ntraits <- length(c(eco_dimensions, sex_dimensions))
@@ -89,7 +130,7 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   is_mutation_sex <- as.logical(rbinom(length(sex_dimensions), 1, mutation_rate_sex))
   
   # Implement mutation
-  if(any(is_mutation_eco)) {
+  if (any(is_mutation_eco)) {
     
     # How many dimensions mutate?
     nmutations <- length(which(is_mutation_eco))
@@ -97,7 +138,13 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
     # Determine the mutated phenotype
     mutated <- sapply(1:nmutations, function(i) {
       nonmutated <- off_eco_traits[is_mutation_eco]
-      rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = nonmutated, sd = mutational_effect_eco)
+      truncnorm::rtruncnorm(
+        n = 1,
+        a = bounds[1],
+        b = bounds[2],
+        mean = nonmutated,
+        sd = mutational_effect_eco
+      )
     })
     
     # Update the relevant dimensions for the offspring
@@ -105,7 +152,7 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
     
   }
   
-  if(any(is_mutation_sex)) {
+  if (any(is_mutation_sex)) {
     
     # How many dimensions mutate?
     nmutations <- length(which(is_mutation_sex))
@@ -113,7 +160,7 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
     # Determine the mutated phenotype
     mutated <- sapply(1:nmutations, function(i) {
       nonmutated <- off_sex_traits[is_mutation_sex]
-      rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = nonmutated, sd = mutational_effect_sex)
+      truncnorm::rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = nonmutated, sd = mutational_effect_sex)
     })
     
     # Update the relevant dimensions for the offspring
@@ -126,18 +173,53 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   y_mom <- population[mom_id, geo_dimensions][2]
   
   # Geographical location of the offspring within the bounds
-  x_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = x_mom, sd = dispersal_distance)
-  y_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = y_mom, sd = dispersal_distance)
+  x_offspring <- truncnorm::rtruncnorm(
+    n = 1,
+    a = bounds[1],
+    b = bounds[2],
+    mean = x_mom,
+    sd = dispersal_distance
+  )
   
-  ##if(any(is.na(c(x_offspring, y_offspring)))) stop("Here too!")
+  y_offspring <- truncnorm::rtruncnorm(
+    n = 1,
+    a = bounds[1],
+    b = bounds[2],
+    mean = y_mom,
+    sd = dispersal_distance
+  )
   
-  offspring <- unlist(c(off_eco_traits, off_sex_traits, x_offspring, y_offspring, individual_species))
+  ##if (any(is.na(c(x_offspring, y_offspring)))) stop("Here too!")
+  
+  offspring <- unlist(c(
+    off_eco_traits,
+    off_sex_traits,
+    x_offspring,
+    y_offspring,
+    individual_species
+  ))
   
   return(offspring)
   
 }
 
-# Survival of an individual
+#' Determines if individual survives
+#'
+#' @param individual_id stub
+#' @param base_survival stub
+#' @param eco_dimensions stub
+#' @param eco_cutoff stub
+#' @param geo_cutoff stub
+#' @param eco_distance_matrix stub
+#' @param geo_distance_matrix stub
+#' @param niche_width stub
+#' @param geo_width stub
+#' @param resource_peaks stub
+#' @param resource_width stub
+#' @param max_carrying_capacity stub
+#'
+#' @return Integer 1 or 0 determining if individual survives (1) or dies (0).
+#' @export
 survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width, resource_peaks, resource_width, max_carrying_capacity) {
   
   # Who are the competitors?
@@ -161,8 +243,8 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
   survival_prob <- base_survival / density_dependence
   ##print(survival_prob)
   
-  if(survival_prob < 0) survival_prob <- 0
-  if(survival_prob > 1) survival_prob <- 1
+  if (survival_prob < 0) survival_prob <- 0
+  if (survival_prob > 1) survival_prob <- 1
   
   # Does it survive?
   is_survivor <- rbinom(1, 1, survival_prob)
@@ -171,7 +253,19 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
   
 }
 
-# Competition function
+#' Calculate competition coefficient
+#'
+#' @param focal_id stub
+#' @param competitor_id stub 
+#' @param niche_width stub
+#' @param geo_width stub
+#' @param eco_distance_matrix stub
+#' @param geo_distance_matrix stub
+#'
+#' @return
+#' @export numeric with competition coefficient
+#'
+#' @examples
 competition_kernel <- function(focal_id, competitor_id, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix) {
   
   ecological_distance <- eco_distance_matrix[focal_id, competitor_id]
@@ -213,7 +307,7 @@ initialize_population <- function(necol, nspatial, nmating, nindiv, bounds = c(0
   # Sample initial values for all individuals and all dimensions
   dimensions <- seq_len(necol + nspatial + nmating)
   population <- lapply(dimensions, function(dim) {
-    rtruncnorm(n = nindiv, a = bounds[1], b = bounds[2], mean = midpoint, sd = sd)
+    truncnorm::rtruncnorm(n = nindiv, a = bounds[1], b = bounds[2], mean = midpoint, sd = sd)
   })
   population <- do.call("cbind", population)
   population <- as.data.frame(population)
@@ -260,7 +354,7 @@ update_speciation <- function(population, speciation_delta, minspecsize) {
   allspecies <- unique(population$species)
   
   # For each species...
-  for(i in seq_len(length(allspecies))) {
+  for (i in seq_len(length(allspecies))) {
     
     #print(i)
     
@@ -270,7 +364,7 @@ update_speciation <- function(population, speciation_delta, minspecsize) {
     n <- length(which(population$species == curr.species))
     
     # If there are enough individuals to look at meaningful clusters...
-    if(n >= minspecsize) {
+    if (n >= minspecsize) {
       
       # Check whether the current species has speciated
       species_ids <- check_split(curr.species, population, sex_dimensions, speciation_delta)
@@ -282,7 +376,7 @@ update_speciation <- function(population, speciation_delta, minspecsize) {
     }
     
     # If there is speciation
-    if(length(species_ids) > 0) {
+    if (length(species_ids) > 0) {
       
       # Replace the species ids with the new ids
       population$species[population$species == curr.species] <- species_ids
@@ -314,7 +408,7 @@ check_split <- function(species_id, population, sex_dimensions, speciation_delta
   is_speciation <- fit2 - fit1 > speciation_delta
   
   # Return the species ID of all individuals
-  if(is_speciation) {
+  if (is_speciation) {
     return(as.numeric(paste0(species_id, mod2$cluster)))
   } else {
     return(NULL)

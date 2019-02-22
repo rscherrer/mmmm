@@ -1,10 +1,3 @@
-# Initialization
-
-rm(list = ls())
-
-library(truncnorm)
-
-source("raphscripts/functions.R")
 
 
 #set.seed(42)
