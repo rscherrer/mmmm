@@ -33,7 +33,14 @@ mutation_rate_sex <- 0.005
 mutational_effect_eco <- 0.01 
 mutational_effect_sex <- 0.01
 tmax <- 10
-  
+base_survival <- 0.8
+eco_cutoff <- 2
+geo_cutoff <- 2
+niche_width <- 1
+geo_width <- 1
+resource_peaks <- c(5,5) # should be a table with the coordinates of the peaks in multiple dimensions
+resource_width <- 3
+max_carrying_capacity <- 1000
 
 # Initialize the population with a function
 population <- initialize_population(necol, nspatial, nmating, nindiv, bounds, sd)
@@ -101,7 +108,7 @@ while(t <= tmax) {
   survivors_id <- lapply(1:nrow(population), function(individual_id) {
     
     # Does the focal individual survive?
-    does_survive <- survive(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix)
+    does_survive <- survive(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width)
     
     return(does_survive)
     

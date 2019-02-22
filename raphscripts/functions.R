@@ -134,16 +134,16 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
 }
 
 # Survival of an individual
-survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix) {
+survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width) {
   
   # Who are the competitors?
-  is_competitor <- eco_distance_matrix[focal_id,] <= eco_cutoff & geo_distance_matrix[focal_id,] <= geo_cutoff
+  is_competitor <- eco_distance_matrix[individual_id,] <= eco_cutoff & geo_distance_matrix[individual_id,] <= geo_cutoff
   competitors <- population[is_competitor,]
   
   # Competition perceived by the focal individual
   competition <- lapply(competitors, function(competitor_id) {
     
-    competition_kernel(individual_id, competitor_id, max_ecol_distance, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix)
+    competition_kernel(individual_id, competitor_id, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix)
     
   })
   
@@ -164,7 +164,7 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
 }
 
 # Competition function
-competition_kernel <- function(focal_id, competitor_id, max_ecol_distance, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix) {
+competition_kernel <- function(focal_id, competitor_id, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix) {
   
   ecological_distance <- eco_distance_matrix[focal_id, competitor_id]
   geographical_distance <- geo_distance_matrix[focal_id, competitor_id]
