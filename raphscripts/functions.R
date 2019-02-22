@@ -9,39 +9,55 @@ make_distance_matrix <- function(population, dimensions) {
 }
 
 # Mate finding
-find_mate <- function(individual_id, max_distance, distance_matrix, a, b) {
+find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mateslope, mateintercept, population) {
+  
+  speciescol <- ncol(population)
   
   # Extract relevant entries from distance matrix
-  distance_vec <- distance_matrix[,individual_id]
+  distance_vec <- geo_distance_matrix[,individual_id]
   
   # Remove the focal individual
   distance_vec <- distance_vec[-individual_id]
   
+  # Keep only conspecifics
+  conspecifics <- population[-individual_id, speciescol] == population[individual_id, speciescol]
+  distance_vec <- distance_vec[conspecifics]
+  
   # Remove everything that is too far
-  distance_vec <- distance_vec[!distance_vec > max_distance]
+  distance_vec <- distance_vec[!distance_vec > maxmatedistance]
   
-  # Probability depends on geographical distance (turn this into probability)
-  sampling_probs <- a * distance_vec + b
-  sampling_probs[sampling_probs < 0] <- 0
-  
-  # Sample a mate
-  mate_id <- sample(names(distance_vec), prob = sampling_probs)
-  
-  return(mate_id)
+  # If there are potential mates left
+  if(length(distance_vec) > 0) {
+    
+    # Probability depends on geographical distance (turn this into probability)
+    sampling_probs <- mateslope * distance_vec + mateintercept
+    sampling_probs[sampling_probs < 0] <- 0
+    
+    # Sample a mate
+    mate_id <- sample(names(distance_vec), size = 1, prob = sampling_probs)
+    mate_id <- as.numeric(mate_id)
+    
+    return(mate_id)
+    
+  } else {
+    
+    return(NULL)
+    
+  }
+ 
 }
 
-
 # Does mating happens?
-mating_success <- function(mom_id, dad_id, a, b) {
+mating_success <- function(mom_id, dad_id, sexslope, sexintercept) {
   
-  mom_sex_traits <- population[mom_id, sex_dimensions]
-  dad_sex_traits <- population[dad_id, sex_dimensions]
+  mom_sex_traits <- t(population[mom_id, sex_dimensions])
+  dad_sex_traits <- t(population[dad_id, sex_dimensions])
   
   # Distance in mating space
-  sex_distance <- abs(mom_sex_traits - dad_sex_traits)
+  sex_distance <- dist(cbind(mom_sex_traits, dad_sex_traits))
   
   # Mating probability (turn this into a probability)
-  mating_prob <- a * sex_distance + b
+  mating_prob <- sexslope * sex_distance + sexintercept
   if(mating_prob > 1) mating_prob <- 1
   if(mating_prob < 0) mating_prob <- 0
   
@@ -53,7 +69,7 @@ mating_success <- function(mom_id, dad_id, a, b) {
 }
 
 # Function to produce offspring
-produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions, sex_dimensions, geo_dimensions, mutation_rate_eco, mutation_rate_sex, mutational_effect_eco, mutational_effect_sex, bounds) {
+produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions, sex_dimensions, geo_dimensions, mutation_rate_eco, mutation_rate_sex, mutational_effect_eco, mutational_effect_sex, bounds, individual_species) {
   
   # Extract parental trait values
   mom_eco_traits <- population[mom_id, eco_dimensions]
@@ -104,14 +120,14 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   }
   
   # Mom's geographical location
-  x_mom <- population[mom_di, geo_dimensions][1]
-  y_mom <- population[mom_di, geo_dimensions][2]
+  x_mom <- population[mom_id, geo_dimensions][1]
+  y_mom <- population[mom_id, geo_dimensions][2]
   
   # Geographical location of the offspring within the bounds
   x_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = x_mom, sd = dispersal_distance)
   y_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = y_mom, sd = dispersal_distance)
   
-  offspring <- c(off_eco_traits, off_sex_traits, x_offspring, y_offspring)
+  offspring <- unlist(c(off_eco_traits, off_sex_traits, x_offspring, y_offspring, individual_species))
   
   return(offspring)
   
