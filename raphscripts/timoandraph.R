@@ -101,7 +101,7 @@ while(t <= tmax) {
   survivors_id <- lapply(1:nrow(population), function(individual_id) {
     
     # Does the focal individual survive?
-    does_survive <- survive(individual_id)
+    does_survive <- survive(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix)
     
     return(does_survive)
     
