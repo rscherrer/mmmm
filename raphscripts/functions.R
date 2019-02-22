@@ -34,7 +34,7 @@ find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mates
     sampling_probs[sampling_probs < 0] <- 0
     
     # Sample a mate
-    mate_id <- sample(names(distance_vec), size = 1, prob = sampling_probs)
+    mate_id <- sample(1:length(distance_vec), size = 1, prob = sampling_probs)
     mate_id <- as.numeric(mate_id)
     
     return(mate_id)
@@ -81,10 +81,12 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   off_eco_traits <- (mom_eco_traits + dad_eco_traits) / 2
   off_sex_traits <- (mom_sex_traits + dad_sex_traits) / 2
   
+  ##if(any(is.na(c(off_eco_traits, off_eco_traits)))) stop("Here!")
+  
   # Sample mutation events
   ntraits <- length(c(eco_dimensions, sex_dimensions))
-  is_mutation_eco <- rbinom(length(eco_dimensions), 1, mutation_rate_eco)
-  is_mutation_sex <- rbinom(length(sex_dimensions), 1, mutation_rate_sex)
+  is_mutation_eco <- as.logical(rbinom(length(eco_dimensions), 1, mutation_rate_eco))
+  is_mutation_sex <- as.logical(rbinom(length(sex_dimensions), 1, mutation_rate_sex))
   
   # Implement mutation
   if(any(is_mutation_eco)) {
@@ -127,6 +129,8 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   x_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = x_mom, sd = dispersal_distance)
   y_offspring <- rtruncnorm(n = 1, a = bounds[1], b = bounds[2], mean = y_mom, sd = dispersal_distance)
   
+  ##if(any(is.na(c(x_offspring, y_offspring)))) stop("Here too!")
+  
   offspring <- unlist(c(off_eco_traits, off_sex_traits, x_offspring, y_offspring, individual_species))
   
   return(offspring)
@@ -155,7 +159,9 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
   
   # Survival probability
   survival_prob <- base_survival / density_dependence
+  ##print(survival_prob)
   
+  if(survival_prob < 0) survival_prob <- 0
   if(survival_prob > 1) survival_prob <- 1
   
   # Does it survive?
@@ -172,6 +178,7 @@ competition_kernel <- function(focal_id, competitor_id, niche_width, geo_width, 
   geographical_distance <- geo_distance_matrix[focal_id, competitor_id]
   
   competition_coeff <- exp(- 0.5 * (ecological_distance^2 / niche_width^2 + geographical_distance^2 / geo_width^2))
+  ##print(competition_coeff)
   
   return(competition_coeff)
   
@@ -235,11 +242,11 @@ take_selfie <- function(population, t) {
 #### Speciation related functions ####
 
 # Update the phylogeny
-update_register <- function(register, population) {
+update_register <- function(register, population, t) {
   
   # Record all species and append them to the register
   allspecies <- unique(population$species)
-  register <- append(register, allspecies)
+  register[[t + 1]] <- allspecies
   return(register)
   
 }
@@ -247,7 +254,7 @@ update_register <- function(register, population) {
 
 
 # Update the population with new species if speciation has happened
-update_speciation <- function(population, speciation_delta) {
+update_speciation <- function(population, speciation_delta, minspecsize) {
   
   # What are all the species?
   allspecies <- unique(population$species)
@@ -255,10 +262,24 @@ update_speciation <- function(population, speciation_delta) {
   # For each species...
   for(i in seq_len(length(allspecies))) {
     
+    #print(i)
+    
     curr.species <- allspecies[i]
     
-    # Check whether the current species has speciated
-    species_ids <- check_split(curr.species, population, sex_dimensions, speciation_delta)
+    # How many individuals?
+    n <- length(which(population$species == curr.species))
+    
+    # If there are enough individuals to look at meaningful clusters...
+    if(n >= minspecsize) {
+      
+      # Check whether the current species has speciated
+      species_ids <- check_split(curr.species, population, sex_dimensions, speciation_delta)
+      
+    } else {
+      
+      species_ids <- NULL
+      
+    }
     
     # If there is speciation
     if(length(species_ids) > 0) {
