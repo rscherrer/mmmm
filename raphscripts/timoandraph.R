@@ -38,12 +38,17 @@ eco_cutoff <- 2
 geo_cutoff <- 2
 niche_width <- 1
 geo_width <- 1
-resource_peaks <- c(5,5) # should be a table with the coordinates of the peaks in multiple dimensions
+resource_peaks <- rep(5, necol) # works for multivariate Gaussian for now (single peak)
 resource_width <- 3
 max_carrying_capacity <- 1000
+speciation_delta <- 0.01
+selfietime <- 1
 
 # Initialize the population with a function
 population <- initialize_population(necol, nspatial, nmating, nindiv, bounds, sd)
+
+# Initialize the register with a single species
+register <- 1
 
 eco_dimensions <- 1:necol
 geo_dimensions <- (necol + 1):(necol + nspatial)
@@ -105,28 +110,29 @@ while(t <= tmax) {
   
   # Create a population of survivors
   # For each individual...
-  survivors_id <- lapply(1:nrow(population), function(individual_id) {
+  survivors_id <- as.logical(sapply(1:nrow(population), function(individual_id) {
     
     # Does the focal individual survive?
-    does_survive <- survive(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width)
+    does_survive <- survive(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width, resource_peaks, resource_width, max_carrying_capacity)
     
     return(does_survive)
     
-  })
+  }))
   
   # Extract the survivors from the old population
   survivors <- population[survivors_id,]
   
   # Plug together offspring and survivors
+  colnames(offspring) <- colnames(survivors)
   population <- rbind(survivors, offspring)
   
   # Update the population matrix based on speciation
-  population <- update_speciation(population)
+  population <- update_speciation(population, speciation_delta)
   
   # Update the phylogeny
   register <- update_register(register, population)
   
-  # Is it time to takea selfie?
+  # Is it time to take a selfie?
   is_selfietime <- t %% selfietime == 0
   
   # Take a selfie

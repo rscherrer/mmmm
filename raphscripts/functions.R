@@ -134,18 +134,18 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
 }
 
 # Survival of an individual
-survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width) {
+survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, geo_cutoff, eco_distance_matrix, geo_distance_matrix, niche_width, geo_width, resource_peaks, resource_width, max_carrying_capacity) {
   
   # Who are the competitors?
   is_competitor <- eco_distance_matrix[individual_id,] <= eco_cutoff & geo_distance_matrix[individual_id,] <= geo_cutoff
   competitors <- population[is_competitor,]
   
   # Competition perceived by the focal individual
-  competition <- lapply(competitors, function(competitor_id) {
+  competition <- sum(sapply(1:nrow(competitors), function(competitor_id) {
     
     competition_kernel(individual_id, competitor_id, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix)
     
-  })
+  }))
   
   # Carrying capacity of the focal individual
   carrying_capacity <- get_carrying_capacity(individual_id, population, resource_peaks, resource_width, max_carrying_capacity, eco_dimensions)
@@ -155,6 +155,8 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
   
   # Survival probability
   survival_prob <- base_survival / density_dependence
+  
+  if(survival_prob > 1) survival_prob <- 1
   
   # Does it survive?
   is_survivor <- rbinom(1, 1, survival_prob)
@@ -181,11 +183,11 @@ get_carrying_capacity <- function(individual_id, population, resource_peaks, res
   # Trait of the individual
   individual_traits <- population[individual_id, eco_dimensions]
   
-  # Distances to peak in each dimension
+  # Distances to each peak in each dimension
   distances_to_peaks <- individual_traits - resource_peaks
   
   # Take the sum of squares
-  ssdistances_to_peaks <- sum((distances_to_peaks)^2)
+  ssdistances_to_peaks <- sum(distances_to_peaks^2)
   
   # Carrying capacity equation
   # Note: multidimensional normal distribution over ecological space, constant across geographical space
@@ -236,17 +238,19 @@ take_selfie <- function(population, t) {
 update_register <- function(register, population) {
   
   # Record all species and append them to the register
-  allspecies <- levels(population$species)
+  allspecies <- unique(population$species)
   register <- append(register, allspecies)
   return(register)
   
 }
 
+
+
 # Update the population with new species if speciation has happened
-update_speciation <- function(population) {
+update_speciation <- function(population, speciation_delta) {
   
   # What are all the species?
-  allspecies <- levels(population$species)
+  allspecies <- unique(population$species)
   
   # For each species...
   for(i in seq_len(length(allspecies))) {
@@ -257,14 +261,16 @@ update_speciation <- function(population) {
     species_ids <- check_split(curr.species, population, sex_dimensions, speciation_delta)
     
     # If there is speciation
-    if(species_ids != FALSE) {
+    if(length(species_ids) > 0) {
       
       # Replace the species ids with the new ids
-      population$species[population$species == curr.species,] <- species_ids
+      population$species[population$species == curr.species] <- species_ids
       
     }
     
   }
+  
+  return(population)
   
 }
 
@@ -290,7 +296,7 @@ check_split <- function(species_id, population, sex_dimensions, speciation_delta
   if(is_speciation) {
     return(as.numeric(paste0(species_id, mod2$cluster)))
   } else {
-    return(FALSE)
+    return(NULL)
   }
   
 }
