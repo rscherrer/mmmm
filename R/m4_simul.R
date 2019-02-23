@@ -1,7 +1,14 @@
-nGeoDim <- 2 # number of geographical dimensions
-nEcoDim <- 2 # number of ecological dimensions
+
 
 # Function to simulate the process
+#' Simulate the process
+#'
+#' @param nGeoDim number of geographical dimensions
+#' @param nEcoDim number of ecological dimensions
+#'
+#' @return stub
+#' @export
+#'
 m4_simul <- function(nGeoDim, nEcoDim) {
   
   # Simulate for a certain time
@@ -22,7 +29,7 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   dimensions <- c(geoDimensions, ecoDimensions)
   #domains <- sapply(dimensions, length)
   #nCells <- prod(domains)
-  nDim <- length(dimensions)
+  nDim <- length(dimensions) # This variable is not used
   world <- expand.grid(dimensions)
   
   # Initialize with a first species
@@ -30,7 +37,7 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   # Initial density = 10 individuals
   nCells <- nrow(world)
   startingCell <- sample(nCells, 1)
-  nSpecies <- 1
+  nSpecies <- 1 # This variable is not used
   speciesDensities <- as.matrix(rep(0, nrow(world)))
   startingDensity <- 10
   speciesDensities[startingCell] <- startingDensity
@@ -44,11 +51,11 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   # Local density-dependence in population growth (Ricker model)
   # Death of parents
   # Census
-  timestep <- 1
+  timestep <- 1 # This variable is not used
   
   # Dispersal
   dispersalRate <- 0.01
-  worldPopulation <- sum(speciesDensities)
+  worldPopulation <- sum(speciesDensities) # This variable is not used
   
   # Each cell has a density for each species
   # Use these densities as probabilities
@@ -73,10 +80,13 @@ m4_simul <- function(nGeoDim, nEcoDim) {
     
     # Number of dispersers for each species present locally
     nDispersers <- sapply(curr.cell, function(n) rbinom(1, n, dispersalRate))
-    
   })
+  
   nDispersers <- do.call("rbind", nDispersers)
-  if(!all(dim(nDispersers) == dim(speciesDensities) & dim(speciesDensities) == dim(deltaDensities))) stop("densities of the matrices do not match")
+  if (!all(dim(nDispersers) == dim(speciesDensities) &&
+           dim(speciesDensities) == dim(deltaDensities))) {
+    stop("densities of the matrices do not match")
+  }
   
   # Vector of all possible directions
   # Remove the event "no movement"
@@ -88,13 +98,13 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   
   # For each cell, where do the dispersers go?
   # Need a for loop
-  for(i in seq_len(nrow(nDispersers))) {
-    for(j in seq_len(ncol(nDispersers))) {
-      if(nDispersers[i,j] > 0) {
+  for (i in seq_len(nrow(nDispersers))) {
+    for (j in seq_len(ncol(nDispersers))) {
+      if (nDispersers[i,j] > 0) {
         ndispersers <- nDispersers[i,j]
         
         # For each disperser
-        while(ndispersers > 0) {
+        while (ndispersers > 0) {
           move <- unlist(allMoves[sample(nrow(allMoves), 1),])
           ii <- i + move[1]
           jj <- j + move[2]

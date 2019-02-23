@@ -66,10 +66,10 @@ find_mate <- function(individual_id, maxmatedistance, geo_distance_matrix, mates
 
 #' Check mating success
 #'
-#' @param mom_id 
-#' @param dad_id 
-#' @param sexslope 
-#' @param sexintercept 
+#' @param mom_id stub
+#' @param dad_id stub
+#' @param sexslope stub
+#' @param sexintercept stub
 #'
 #' @return a numeric? int? probability? of mating happening
 #' @export
@@ -125,7 +125,7 @@ produce_offspring <- function(mom_id, dad_id, dispersal_distance, eco_dimensions
   ##if (any(is.na(c(off_eco_traits, off_eco_traits)))) stop("Here!")
   
   # Sample mutation events
-  ntraits <- length(c(eco_dimensions, sex_dimensions))
+  ntraits <- length(c(eco_dimensions, sex_dimensions)) # This variable is never used
   is_mutation_eco <- as.logical(rbinom(length(eco_dimensions), 1, mutation_rate_eco))
   is_mutation_sex <- as.logical(rbinom(length(sex_dimensions), 1, mutation_rate_sex))
   
@@ -262,16 +262,16 @@ survive <- function(individual_id, base_survival, eco_dimensions, eco_cutoff, ge
 #' @param eco_distance_matrix stub
 #' @param geo_distance_matrix stub
 #'
-#' @return
-#' @export numeric with competition coefficient
-#'
-#' @examples
+#' @return numeric with competition coefficient
+#' @export 
 competition_kernel <- function(focal_id, competitor_id, niche_width, geo_width, eco_distance_matrix, geo_distance_matrix) {
   
   ecological_distance <- eco_distance_matrix[focal_id, competitor_id]
   geographical_distance <- geo_distance_matrix[focal_id, competitor_id]
   
-  competition_coeff <- exp(- 0.5 * (ecological_distance^2 / niche_width^2 + geographical_distance^2 / geo_width^2))
+  competition_coeff <- exp(-0.5 *
+                             (ecological_distance^2 / niche_width^2 +
+                                geographical_distance^2 / geo_width^2))
   ##print(competition_coeff)
   
   return(competition_coeff)
@@ -279,7 +279,12 @@ competition_kernel <- function(focal_id, competitor_id, niche_width, geo_width, 
 }
 
 # Carrying capacity function
-get_carrying_capacity <- function(individual_id, population, resource_peaks, resource_width, max_carrying_capacity, eco_dimensions) {
+get_carrying_capacity <- function(individual_id,
+                                  population,
+                                  resource_peaks,
+                                  resource_width,
+                                  max_carrying_capacity,
+                                  eco_dimensions) {
   
   # Trait of the individual
   individual_traits <- population[individual_id, eco_dimensions]
@@ -292,13 +297,23 @@ get_carrying_capacity <- function(individual_id, population, resource_peaks, res
   
   # Carrying capacity equation
   # Note: multidimensional normal distribution over ecological space, constant across geographical space
-  carrying_capacity <- max_carrying_capacity * exp(- 0.5 * ssdistances_to_peaks / resource_width^2)
+  carrying_capacity <- max_carrying_capacity * 
+    exp(-0.5 * ssdistances_to_peaks / resource_width^2)
   
   return(carrying_capacity)
   
 }
 
-# Function to initialize the population data frame
+#' Initialize the Population Data Frame
+#'
+#' @param necol stub
+#' @param nspatial stub
+#' @param nmating stub
+#' @param nindiv stub
+#' @param bounds stub
+#' @param sd stub
+#'
+#' @return Data frame with population info.
 initialize_population <- function(necol, nspatial, nmating, nindiv, bounds = c(0,10), sd = 1) {
   
   # Center on the midpoint between the boundaries
@@ -318,8 +333,13 @@ initialize_population <- function(necol, nspatial, nmating, nindiv, bounds = c(0
 }
 
 
-
-# Function to take a snapshot of the population
+#' Take a Snapshot of the Population
+#'
+#' @param population stub
+#' @param t stub
+#'
+#' @return Stub. csv file.
+#' @export
 take_selfie <- function(population, t) {
   
   outfile <- paste0("selfie_", t, ".csv")
@@ -335,7 +355,14 @@ take_selfie <- function(population, t) {
 
 #### Speciation related functions ####
 
-# Update the phylogeny
+#' Update the phylogeny
+#'
+#' @param register stub
+#' @param population stub
+#' @param t stub
+#'
+#' @return List with register of unique species?
+#' @export
 update_register <- function(register, population, t) {
   
   # Record all species and append them to the register
@@ -346,8 +373,14 @@ update_register <- function(register, population, t) {
 }
 
 
-
-# Update the population with new species if speciation has happened
+#' Update the population with new species if speciation has happened
+#'
+#' @param population stub
+#' @param speciation_delta stub
+#' @param minspecsize stub
+#'
+#' @return ?List with updated population
+#' @export
 update_speciation <- function(population, speciation_delta, minspecsize) {
   
   # What are all the species?
@@ -389,7 +422,17 @@ update_speciation <- function(population, speciation_delta, minspecsize) {
   
 }
 
-# Function to check if speciation has happened for a given species
+#' Check if speciation happened
+#'
+#' @param species_id stub
+#' @param population stub
+#' @param sex_dimensions stub
+#' @param speciation_delta stub
+#'
+#' @return Numeric with species ID of all individuals.
+#' Otherwise returns \code{NULL}.
+#' @export
+#'
 check_split <- function(species_id, population, sex_dimensions, speciation_delta) {
   
   # Subset the focal species
