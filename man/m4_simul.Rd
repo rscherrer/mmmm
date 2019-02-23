@@ -4,12 +4,12 @@
 \alias{m4_simul}
 \title{Simulate the process}
 \usage{
-m4_simul(nGeoDim, nEcoDim)
+m4_simul(n_geo_dim, n_eco_dim)
 }
 \arguments{
-\item{nGeoDim}{number of geographical dimensions}
+\item{n_geo_dim}{number of geographical dimensions}
 
-\item{nEcoDim}{number of ecological dimensions}
+\item{n_eco_dim}{number of ecological dimensions}
 }
 \value{
 stub

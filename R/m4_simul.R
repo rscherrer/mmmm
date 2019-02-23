@@ -3,13 +3,13 @@
 # Function to simulate the process
 #' Simulate the process
 #'
-#' @param nGeoDim number of geographical dimensions
-#' @param nEcoDim number of ecological dimensions
+#' @param n_geo_dim number of geographical dimensions
+#' @param n_eco_dim number of ecological dimensions
 #'
 #' @return stub
 #' @export
 #'
-m4_simul <- function(nGeoDim, nEcoDim) {
+m4_simul <- function(n_geo_dim, n_eco_dim) {
   
   # Simulate for a certain time
   
@@ -24,23 +24,23 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   # Create a world with multiple dimensions
   # Not in matrix format, we want a data frame where each row is a cell
   # So that we can have the densities of multiple species on that row
-  geoDimensions <- lapply(seq_len(nGeoDim), function(i) seq_len(10))
-  ecoDimensions <- lapply(seq_len(nEcoDim), function(i) seq_len(10))
-  dimensions <- c(geoDimensions, ecoDimensions)
+  geoDimensions <- lapply(seq_len(n_geo_dim), function(i) seq_len(10))
+  eco_dimensions <- lapply(seq_len(n_eco_dim), function(i) seq_len(10))
+  dimensions <- c(geoDimensions, eco_dimensions)
   #domains <- sapply(dimensions, length)
-  #nCells <- prod(domains)
-  nDim <- length(dimensions) # This variable is not used
+  #n_cells <- prod(domains)
+  n_dim <- length(dimensions) # This variable is not used
   world <- expand.grid(dimensions)
   
   # Initialize with a first species
   # Present in only one cell taken at random
   # Initial density = 10 individuals
-  nCells <- nrow(world)
-  startingCell <- sample(nCells, 1)
+  n_cells <- nrow(world)
+  starting_cell <- sample(n_cells, 1)
   nSpecies <- 1 # This variable is not used
-  speciesDensities <- as.matrix(rep(0, nrow(world)))
-  startingDensity <- 10
-  speciesDensities[startingCell] <- startingDensity
+  species_densities <- as.matrix(rep(0, nrow(world)))
+  starting_density <- 10
+  species_densities[starting_cell] <- starting_density
   
   # Simulation loop (discrete time)
   # Asexual species
@@ -54,8 +54,8 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   timestep <- 1 # This variable is not used
   
   # Dispersal
-  dispersalRate <- 0.01
-  worldPopulation <- sum(speciesDensities) # This variable is not used
+  dispersal_rate <- 0.01
+  world_population <- sum(species_densities) # This variable is not used
   
   # Each cell has a density for each species
   # Use these densities as probabilities
@@ -71,51 +71,57 @@ m4_simul <- function(nGeoDim, nEcoDim) {
   # After everything has been calculated, add deltaD to D
   # No need to update gradually (goes faster)
   
-  deltaDensities <- matrix(0, ncol = ncol(speciesDensities), nrow = nrow(speciesDensities))
+  delta_densities <- matrix(
+    0,
+    ncol = ncol(species_densities),
+    nrow = nrow(species_densities)
+  )
   
   # Count numbers of dispersers across all cells
-  nDispersers <- lapply(seq_len(nCells), function(i) {
+  n_dispersers <- lapply(seq_len(n_cells), function(i) {
     
-    curr.cell <- speciesDensities[i,]
+    curr.cell <- species_densities[i,]
     
     # Number of dispersers for each species present locally
-    nDispersers <- sapply(curr.cell, function(n) rbinom(1, n, dispersalRate))
+    n_dispersers <- sapply(
+      curr.cell,
+      function(n) stats::rbinom(1, n, dispersal_rate)
+    )
   })
   
-  nDispersers <- do.call("rbind", nDispersers)
-  if (!all(dim(nDispersers) == dim(speciesDensities) &&
-           dim(speciesDensities) == dim(deltaDensities))) {
+  n_dispersers <- do.call("rbind", n_dispersers)
+  if (!all(dim(n_dispersers) == dim(species_densities) &&
+           dim(species_densities) == dim(delta_densities))) {
     stop("densities of the matrices do not match")
   }
   
   # Vector of all possible directions
   # Remove the event "no movement"
-  allMoves <- expand.grid(lapply(seq_len(nGeoDim), function(i) moves))
-  allMoves <- allMoves[!apply(allMoves, 1, function(x) all(x == 0)),]
+  all_moves <- expand.grid(lapply(seq_len(n_geo_dim), function(i) moves))
+  all_moves <- all_moves[!apply(all_moves, 1, function(x) all(x == 0)),]
   
   # Create a matrix of immigrants
-  nImmigrants <- matrix(0, ncol = ncol(speciesDensities), nrow = nrow(speciesDensities))
+  n_immigrants <- matrix(
+    0,
+    ncol = ncol(species_densities),
+    nrow = nrow(species_densities)
+  )
   
   # For each cell, where do the dispersers go?
   # Need a for loop
-  for (i in seq_len(nrow(nDispersers))) {
-    for (j in seq_len(ncol(nDispersers))) {
-      if (nDispersers[i,j] > 0) {
-        ndispersers <- nDispersers[i,j]
-        
+  for (i in seq_len(nrow(n_dispersers))) {
+    for (j in seq_len(ncol(n_dispersers))) {
+      if (n_dispersers[i, j] > 0) {
+        n_dispersers <- n_dispersers[i, j]
         # For each disperser
-        while (ndispersers > 0) {
-          move <- unlist(allMoves[sample(nrow(allMoves), 1),])
+        while (n_dispersers > 0) {
+          move <- unlist(all_moves[sample(nrow(all_moves), 1), ])
           ii <- i + move[1]
           jj <- j + move[2]
-          nImmigrants[ii, jj] <- nImmigrants[ii, jj] + 1
-          ndispersers <- ndispersers - 1
+          n_immigrants[ii, jj] <- n_immigrants[ii, jj] + 1
+          n_dispersers <- n_dispersers - 1
         }
-        
       }
     }
   }
-  
-  
-  
 }
