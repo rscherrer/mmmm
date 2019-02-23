@@ -1,2 +1,5 @@
+^\.travis\.yml$
+^runcode\.R$
+^R/main\.R$
 ^.*\.Rproj$
 ^\.Rproj\.user$
