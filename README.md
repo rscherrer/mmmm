@@ -10,4 +10,4 @@
 | `bouwe` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=bouwe)](https://travis-ci.org/rscherrer/mmmm) |
 | `pedro` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=pedro)](https://travis-ci.org/rscherrer/mmmm) |
 | `raph` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=raph)](https://travis-ci.org/rscherrer/mmmm) |
-| `timo` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=timo)](https://travis-ci.org/rscherrer/mmmm) |1111
+| `timo` | [![Build Status](https://travis-ci.org/rscherrer/mmmm.svg?branch=timo)](https://travis-ci.org/rscherrer/mmmm) |
